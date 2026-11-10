@@ -1,0 +1,7 @@
+# Configuration clasp locale (contient l'ID de TON script) et identifiants
+.clasp.json
+.clasprc.json
+node_modules/
+.DS_Store
+*.log
+apercu.html

@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Récupération</title>
+<style>
+  :root {
+    --bg: #0d1014; --card: #161a20; --line: #252a32; --txt: #f3f5f7; --mut: #8b94a1;
+    --vert: #2bd46c; --jaune: #f6c62b; --rouge: #ff4d57; --strain: #3d9bff; --sommeil: #a08bff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--txt); -webkit-font-smoothing: antialiased;
+    font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .nav { background: var(--card); border: 0; color: var(--txt); width: 38px; height: 38px; border-radius: 50%;
+    font-size: 22px; line-height: 1; cursor: pointer; }
+  .nav:disabled { opacity: .25; cursor: default; }
+  .day { text-align: center; }
+  .day b { display: block; font-size: 17px; }
+  .day b::first-letter { text-transform: uppercase; }
+  .day span { color: var(--mut); font-size: 12px; }
+  .rings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .ring { text-align: center; }
+  .ring svg { width: 100%; max-width: 124px; height: auto; display: block; margin: 0 auto; }
+  .ring circle.val { transition: stroke-dashoffset .7s ease; }
+  .lbl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--mut); margin-top: 6px; }
+  .card { background: var(--card); border-radius: 18px; padding: 16px; margin-bottom: 12px; }
+  .card h2 { font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--mut); font-weight: 600; margin-bottom: 10px; }
+  .reco { font-size: 17px; font-weight: 650; }
+  .reco small { display: block; font-weight: 400; color: var(--mut); font-size: 13px; margin-top: 4px; }
+  .bar { position: relative; height: 10px; background: var(--line); border-radius: 5px; margin: 16px 0 6px; }
+  .band { position: absolute; top: 0; bottom: 0; border-radius: 5px; opacity: .4; }
+  .mark { position: absolute; top: -4px; width: 4px; height: 18px; border-radius: 2px; background: #fff;
+    transform: translateX(-2px); box-shadow: 0 0 0 2px var(--card); }
+  .scale { position: relative; height: 16px; color: var(--mut); font-size: 11px; }
+  .scale span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .scale span:first-child { transform: none; }
+  .scale span:last-child { transform: translateX(-100%); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .met { background: var(--card); border-radius: 18px; padding: 14px; min-width: 0; }
+  .met .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--mut); }
+  .met .v { font-size: 26px; font-weight: 700; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+  .met .v small { font-size: 13px; font-weight: 500; color: var(--mut); }
+  .met .d { font-size: 12px; }
+  .met svg { width: 100%; height: 30px; margin-top: 8px; display: block; }
+  .up { color: var(--vert); } .down { color: var(--rouge); } .flat { color: var(--mut); }
+  .legend { display: flex; gap: 16px; font-size: 11px; color: var(--mut); margin-top: 6px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0;
+    border-top: 1px solid var(--line); font-size: 14px; }
+  .row b { font-variant-numeric: tabular-nums; }
+  .muted { color: var(--mut); font-size: 12px; }
+  .empty { text-align: center; color: var(--mut); padding: 60px 20px; }
+  footer { text-align: center; color: var(--mut); font-size: 11px; margin-top: 18px; }
+  .big { display: flex; align-items: baseline; gap: 10px; }
+  .big b { font-size: 34px; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1; }
+  .big span { font-size: 15px; font-weight: 650; }
+  .big small { color: var(--mut); font-size: 13px; }
+  .hours { margin: 14px 0 4px; }
+  .hours svg { display: block; width: 100%; height: auto; }
+  .tabs { display: flex; gap: 4px; background: var(--card); border-radius: 12px; padding: 4px; margin-bottom: 18px; }
+  .tabs button { flex: 1; border: 0; background: none; color: var(--mut); padding: 9px 0; border-radius: 9px;
+    font: 600 14px/1 inherit; font-family: inherit; cursor: pointer; }
+  .tabs button.on { background: var(--line); color: var(--txt); }
+  .ring.cliquable { cursor: pointer; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .stack { display: flex; height: 12px; border-radius: 6px; overflow: hidden; margin: 6px 0 4px; }
+  .stack i { display: block; height: 100%; }
+  .pastille { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 8px; vertical-align: 0; }
+  .themes .row b small { color: var(--mut); font-weight: 500; }
+  .jauge { position: relative; height: 6px; background: var(--line); border-radius: 3px; margin-top: 6px; }
+  .jauge i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; }
+  .sous { color: var(--mut); font-size: 12px; font-weight: 400; }
+  .hero { display: flex; align-items: center; gap: 16px; }
+  .hero .ring { flex: 0 0 104px; }
+  .hero h3 { font-size: 17px; font-weight: 650; margin-bottom: 4px; }
+  .chargement { text-align: center; color: var(--mut); padding: 40px 0; }
+  .resume { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+  .resume b { font-variant-numeric: tabular-nums; }
+  .resume .fl { color: var(--mut); font-size: 20px; }
+  .coach .besoin { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .coach .besoin b { font-size: 34px; font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; }
+  .parts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; font-size: 12px; color: var(--mut); margin-top: 8px; }
+  .parts span { display: flex; justify-content: space-between; gap: 8px; }
+  .parts b { color: var(--txt); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .couchers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 6px; }
+  .couchers div { border: 1px solid var(--line); border-radius: 14px; padding: 10px 6px; text-align: center; }
+  .couchers div.cle { border-color: var(--sommeil); }
+  .couchers div.passe { opacity: .4; }
+  .couchers div.passe b { text-decoration: line-through; }
+  .couchers small { display: block; font-size: 11px; color: var(--mut); text-transform: uppercase; letter-spacing: .06em; }
+  .couchers b { display: block; font-size: 22px; font-weight: 700; margin: 4px 0 2px; font-variant-numeric: tabular-nums; }
+  .couchers span { font-size: 11px; color: var(--mut); }
+  .conseil { border-left: 3px solid var(--sommeil); padding: 4px 0 4px 12px; margin: 14px 0 4px; font-size: 14px; }
+  .reveils summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  .reveils summary::-webkit-details-marker { display: none; }
+  .reveils summary em { font-style: normal; color: var(--sommeil); font-size: 13px; }
+  .semaine { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 12px; }
+  .semaine label { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--mut); min-width: 0; }
+  .semaine input { width: 100%; min-width: 0; background: var(--bg); color: var(--txt); border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 0; font: 600 12px/1 inherit; font-family: inherit; text-align: center; color-scheme: dark; }
+  .actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .actions button { background: var(--sommeil); color: #10131a; border: 0; border-radius: 20px; padding: 8px 16px;
+    font: 600 13px/1 inherit; font-family: inherit; cursor: pointer; }
+  .actions button:disabled { opacity: .5; }
+  .lg-hero .ages { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .lg-hero .ages b { font-size: 40px; font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; font-size: 12px; font-weight: 650; padding: 4px 9px; border-radius: 20px; }
+  .intervalle { position: relative; height: 34px; margin: 20px 0 4px; }
+  .intervalle .axe { position: absolute; left: 0; right: 0; top: 14px; height: 6px; border-radius: 3px; background: var(--line); }
+  .intervalle .plage { position: absolute; top: 14px; height: 6px; border-radius: 3px; opacity: .55; }
+  .intervalle .moi { position: absolute; top: 9px; width: 16px; height: 16px; border-radius: 50%; transform: translateX(-8px);
+    border: 3px solid var(--card); }
+  .intervalle .civil { position: absolute; top: 4px; width: 2px; height: 26px; background: var(--mut); transform: translateX(-1px); }
+  .rythme { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .rythme b { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .contrib { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 10px; align-items: center;
+    padding: 10px 0; border-top: 1px solid var(--line); }
+  .contrib .nom { font-size: 14px; }
+  .contrib .nom span { display: block; color: var(--mut); font-size: 11px; margin-top: 2px; }
+  .contrib .barre { position: relative; height: 10px; }
+  .contrib .barre::before { content: ''; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 1px; background: var(--mut); opacity: .5; }
+  .contrib .barre i { position: absolute; top: 0; height: 10px; border-radius: 3px; }
+  .contrib .val { grid-column: 2; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .axe-txt { display: flex; justify-content: space-between; font-size: 11px; color: var(--mut); margin: -2px 0 4px; }
+  .levier { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .levier b { color: var(--vert); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .levier.second { color: var(--mut); font-size: 13px; }
+  .levier.second b { color: var(--mut); font-weight: 600; }
+  .methode summary { cursor: pointer; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--mut); font-weight: 600; list-style: none; display: flex; justify-content: space-between; }
+  .methode summary::-webkit-details-marker { display: none; }
+  .methode h3 { font-size: 14px; margin: 18px 0 6px; }
+  .methode p, .methode li { font-size: 13px; color: #c9ced6; line-height: 1.5; }
+  .methode ul { padding-left: 18px; }
+  .methode code { font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+  .methode table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+  .methode td { padding: 6px 4px; border-top: 1px solid var(--line); vertical-align: top; color: #c9ced6; }
+  .methode td:first-child { color: var(--txt); white-space: nowrap; }
+  .progres { margin: 12px 0; }
+  .progres .row { border-top: 0; padding: 4px 0; }
+  #refresh { background: none; border: 1px solid var(--line); color: var(--mut); border-radius: 20px;
+    padding: 7px 16px; font-size: 12px; margin-top: 10px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header>
+    <button class="nav" id="prev" aria-label="Jour précédent">‹</button>
+    <div class="day"><b id="dayName"></b><span id="dayRel"></span></div>
+    <button class="nav" id="next" aria-label="Jour suivant">›</button>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button id="tabJour" class="on" role="tab">Aujourd'hui</button>
+    <button id="tabSommeil" role="tab">Sommeil</button>
+    <button id="tabLongevite" role="tab">Longévité</button>
+  </nav>
+  <div id="vueSommeil" hidden></div>
+  <div id="vueLongevite" hidden></div>
+  <div id="vueJour">
+  <div class="rings" id="rings"></div>
+  <div class="card resume" id="resumeSommeil" role="button" tabindex="0"></div>
+  <div class="card"><h2>Recommandation du jour</h2><div id="reco"></div></div>
+  <div class="card"><h2>Stress</h2><div id="stress"></div></div>
+  <div class="card"><h2>Activité</h2><div id="activite"></div></div>
+  <div class="grid" id="metrics"></div>
+  <div class="card"><h2>30 derniers jours</h2><div id="trend"></div></div>
+  <div class="card"><h2>Charge d'entraînement</h2><div id="acwr"></div></div>
+  <div class="card"><h2>Journal</h2><div id="journal"></div></div>
+  </div>
+  <footer><div id="foot"></div><button id="refresh">↻ Mettre à jour</button></footer>
+</div>
+
+<script>
+let DATA = <?!= data ?>;
+const CLE = <?!= cle ?>;
+
+const C = { vert: '#2bd46c', jaune: '#f6c62b', rouge: '#ff4d57', strain: '#3d9bff', sommeil: '#a08bff',
+            line: '#252a32', mut: '#8b94a1', txt: '#f3f5f7' };
+const ZC = { Vert: C.vert, Jaune: C.jaune, Rouge: C.rouge };
+const $ = id => document.getElementById(id);
+const isN = v => typeof v === 'number' && isFinite(v);
+const fmt = (v, d = 0) => isN(v) ? v.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }) : '–';
+const dnum = d => Date.parse(d + 'T00:00:00Z') / 864e5;
+const avg = a => a.reduce((s, x) => s + x, 0) / a.length;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+let i = dernierJour();
+
+/* Strain de la journée complète (séances + FC continue) ; à défaut, strain des séances seules. */
+const strainDe = r => isN(r.strainJ) ? r.strainJ : r.strain;
+
+function dernierJour() {
+  for (let k = DATA.length - 1; k >= 0; k--) if (isN(DATA[k].rec) || isN(DATA[k].hrv)) return k;
+  return DATA.length - 1;
+}
+
+/* Moyenne des 28 jours précédant le jour affiché (le jour exclu), comme le modèle de score. */
+function moyenne28(key) {
+  const t = dnum(DATA[i].d);
+  const v = DATA.slice(0, i).filter(r => t - dnum(r.d) <= 28 && isN(r[key])).map(r => r[key]);
+  return v.length ? avg(v) : null;
+}
+
+function anneau(frac, couleur, valeur, label, cible) {
+  const S = 124, W = 11, R = (S - W) / 2, L = 2 * Math.PI * R, p = clamp(frac || 0, 0, 1);
+  return `<div class="ring${cible ? ' cliquable' : ''}"${cible ? ` data-vue="${cible}"` : ''}><svg viewBox="0 0 ${S} ${S}" role="img" aria-label="${label} ${valeur}">
+    <circle cx="${S/2}" cy="${S/2}" r="${R}" fill="none" stroke="${C.line}" stroke-width="${W}"/>
+    <circle class="val" cx="${S/2}" cy="${S/2}" r="${R}" fill="none" stroke="${couleur}" stroke-width="${W}"
+      stroke-linecap="round" stroke-dasharray="${L}" stroke-dashoffset="${L * (1 - p)}"
+      transform="rotate(-90 ${S/2} ${S/2})" opacity="${p > 0 ? 1 : 0}"/>
+    <text x="${S/2}" y="${S/2 + 10}" text-anchor="middle" fill="${C.txt}" font-size="29" font-weight="700">${valeur}</text>
+  </svg><div class="lbl">${label}</div></div>`;
+}
+
+function rendreAnneaux() {
+  const r = DATA[i];
+  return anneau(isN(r.sommeil) ? r.sommeil / 100 : 0, C.sommeil, fmt(r.sommeil), 'Sommeil ›', 'sommeil')
+       + anneau(isN(r.rec) ? r.rec / 100 : 0, ZC[r.zone] || C.mut, isN(r.rec) ? fmt(r.rec) + '%' : '–', 'Récupération')
+       + anneau(isN(strainDe(r)) ? strainDe(r) / 21 : 0, C.strain, fmt(strainDe(r), 1), 'Strain');
+}
+
+function echelle(points) {
+  return '<div class="scale">' + points.map(([pos, t]) => `<span style="left:${pos}%">${t}</span>`).join('') + '</div>';
+}
+
+/* Résumé du coach de sommeil (besoin du soir et coucher Solide), calculé par le script. */
+function rendreResumeSommeil() {
+  const r = DATA[i];
+  if (!isN(r.besoin)) return '<span class="muted">Coach sommeil : pas encore de calcul pour ce soir.</span><span class="fl">›</span>';
+  return `<div><div class="lbl" style="margin:0 0 4px">Sommeil ce soir</div>
+    <div>Besoin <b>${hm(r.besoin)}</b> · coucher Solide <b>${r.solide || '–'}</b></div></div><span class="fl">›</span>`;
+}
+
+function rendreReco() {
+  const r = DATA[i];
+  const textes = {
+    Vert:  ['Corps prêt à encaisser', 'Tu peux pousser : vise un strain de 14 à 18.'],
+    Jaune: ['Récupération moyenne', 'Effort modéré : vise un strain de 10 à 14.'],
+    Rouge: ['Priorité à la récupération', 'Séance légère ou repos : reste sous un strain de 10.'],
+  }[r.zone];
+  let h;
+  if (textes) {
+    h = `<div class="reco" style="color:${ZC[r.zone]}">${textes[0]}<small>${textes[1]}</small></div>`;
+  } else if (r.zone === 'Calibration') {
+    const n = DATA.slice(0, i + 1).filter(x => isN(x.hrv)).length;
+    h = `<div class="reco">Calibration en cours<small>Encore ${Math.max(1, 8 - n)} nuit(s) avant ton premier score de récupération.</small></div>`;
+  } else {
+    h = `<div class="reco">Pas de mesure de nuit<small>Porte la montre la nuit et synchronise-la avec Polar Flow.</small></div>`;
+  }
+  const bande = { Vert: [14, 18], Jaune: [10, 14], Rouge: [0, 10] }[r.zone];
+  h += `<div class="bar">`
+    + (bande ? `<div class="band" style="left:${bande[0]/21*100}%;width:${(bande[1]-bande[0])/21*100}%;background:${ZC[r.zone]}"></div>` : '')
+    + (isN(strainDe(r)) ? `<div class="mark" style="left:${clamp(strainDe(r)/21*100, 0, 100)}%"></div>` : '')
+    + `</div>` + echelle([[0, '0'], [50, `Strain du jour : <b style="color:${C.txt}">${fmt(strainDe(r), 1)}</b>`], [100, '21']]);
+  return h;
+}
+
+function sparkline(key) {
+  const pts = DATA.slice(Math.max(0, i - 13), i + 1).map(r => r[key]);
+  const vs = pts.filter(isN);
+  if (vs.length < 2) return '';
+  const mn = Math.min(...vs), mx = Math.max(...vs), rg = (mx - mn) || 1, W = 140, H = 30, n = pts.length;
+  let d = '', suite = false;
+  pts.forEach((v, j) => {
+    if (!isN(v)) { suite = false; return; }
+    const x = n > 1 ? j * W / (n - 1) : 0, y = H - 4 - (v - mn) / rg * (H - 8);
+    d += (suite ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); suite = true;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${d}" fill="none" stroke="${C.mut}"
+    stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>`;
+}
+
+function metrique(key, label, unite, dec, hausseBonne, absolu) {
+  const v = DATA[i][key], b = moyenne28(key);
+  let delta = '<span class="flat">pas encore de référence</span>';
+  if (isN(v) && isN(b) && (absolu || b !== 0)) {
+    // absolu : écart en points (pour la charge SNA, centrée sur 0), sinon écart en %
+    const e = absolu ? v - b : (v - b) / b * 100, bon = (e >= 0) === hausseBonne;
+    const cls = Math.abs(e) < (absolu ? 0.5 : 2) ? 'flat' : bon ? 'up' : 'down';
+    const txt = absolu ? `${e >= 0 ? '+' : '−'}${fmt(Math.abs(e), 1)} pt` : `${fmt(Math.abs(e))} %`;
+    delta = `<span class="${cls}">${e >= 0 ? '▲' : '▼'} ${txt} vs moy. 28 j</span>`;
+  }
+  return `<div class="met"><div class="k">${label}</div><div class="v">${fmt(v, dec)} <small>${unite}</small></div>
+    <div class="d">${delta}</div>${sparkline(key)}</div>`;
+}
+
+function rendreMetriques() {
+  return metrique('hrv', 'Variabilité (HRV)', 'ms', 0, true)
+       + metrique('fc', 'FC de repos', 'bpm', 0, false)
+       + metrique('resp', 'Respiration', '/min', 1, false)
+       + metrique('ans', 'Charge SNA Polar', '/ ±10', 1, true, true);
+}
+
+function rendreTendance() {
+  const rows = DATA.slice(Math.max(0, i - 29), i + 1), n = rows.length, W = 340, H = 140, bw = W / Math.max(n, 1);
+  let s = `<svg viewBox="0 0 ${W} ${H + 18}" width="100%" role="img" aria-label="Récupération et strain sur 30 jours">`;
+  [33, 67].forEach(g => {
+    const y = H - g / 100 * H;
+    s += `<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="${C.line}" stroke-dasharray="3 4"/>`;
+  });
+  rows.forEach((r, j) => {
+    if (!isN(r.rec)) return;
+    const h = Math.max(3, r.rec / 100 * H);
+    s += `<rect x="${(j * bw + bw * .16).toFixed(1)}" y="${(H - h).toFixed(1)}" width="${(bw * .68).toFixed(1)}" height="${h.toFixed(1)}"
+      rx="2" fill="${ZC[r.zone] || C.mut}" opacity="${j === n - 1 ? 1 : .7}"/>`;
+  });
+  rows.forEach((r, j) => {
+    const st = strainDe(r);
+    if (!isN(st) || st <= 0) return;
+    s += `<circle cx="${(j * bw + bw / 2).toFixed(1)}" cy="${(H - st / 21 * H).toFixed(1)}" r="3.6"
+      fill="${C.strain}" stroke="${C.txt}" stroke-width="1"/>`;
+  });
+  rows.forEach((r, j) => {
+    const dernier = j === n - 1;
+    if (!dernier && (j % 7 || n - 1 - j < 4)) return;
+    const dt = new Date(r.d + 'T12:00:00'), x = j * bw + bw / 2;
+    const ancre = j === 0 ? 'start' : dernier ? 'end' : 'middle';
+    s += `<text x="${(j === 0 ? 0 : dernier ? W : x).toFixed(1)}" y="${H + 14}" text-anchor="${ancre}" fill="${C.mut}" font-size="10">${dt.getDate()}/${dt.getMonth() + 1}</text>`;
+  });
+  return s + `</svg><div class="legend"><span><i style="background:${C.vert}"></i>Récupération (%)</span>
+    <span><i style="background:${C.strain};border-radius:50%"></i>Strain (0–21)</span></div>`;
+}
+
+const niveauStress = v => v >= 2 ? ['Élevé', C.rouge] : v >= 1 ? ['Modéré', C.jaune] : ['Calme', C.vert];
+
+function rendreStress() {
+  const r = DATA[i];
+  if (!isN(r.stress)) {
+    return '<div class="muted">Pas de mesure de stress pour ce jour. Il faut la FC continue activée et au moins 1 h de mesures au repos, éveillé, synchronisées avec Polar Flow.</div>';
+  }
+  const [lbl, col] = niveauStress(r.stress);
+  const sem = DATA.slice(Math.max(0, i - 6), i + 1).map(x => x.stress).filter(isN);
+  // Barres horaires 0 h → 23 h
+  const W = 340, H = 64, bw = W / 24;
+  let svg = `<svg viewBox="0 0 ${W} ${H + 16}" role="img" aria-label="Stress heure par heure">`;
+  [1, 2].forEach(g => {
+    const y = H - g / 3 * H;
+    svg += `<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="${C.line}" stroke-dasharray="3 4"/>`;
+  });
+  (r.stressH || []).forEach((v, h) => {
+    if (!isN(v)) return;
+    const hh = Math.max(3, v / 3 * H);
+    svg += `<rect x="${(h * bw + bw * .18).toFixed(1)}" y="${(H - hh).toFixed(1)}" width="${(bw * .64).toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="${niveauStress(v)[1]}"/>`;
+  });
+  [0, 6, 12, 18, 24].forEach(h => {
+    const ancre = h === 0 ? 'start' : h === 24 ? 'end' : 'middle';
+    svg += `<text x="${h * bw}" y="${H + 13}" text-anchor="${ancre}" fill="${C.mut}" font-size="10">${h} h</text>`;
+  });
+  svg += '</svg>';
+  return `<div class="big"><b>${fmt(r.stress, 1)}</b><small>/ 3</small><span style="color:${col}">${lbl}</span></div>
+    <div class="hours">${svg}</div>
+    <div class="row"><span>Temps en stress élevé</span><b>${fmt(r.stressMin)} min</b></div>
+    <div class="row"><span>Moyenne 7 jours</span><b>${sem.length ? fmt(avg(sem), 1) : '–'}</b></div>
+    <div class="muted" style="margin-top:8px">Écart de ta FC au repos, éveillé, par rapport à ta FC habituelle dans les mêmes conditions. Café, chaleur ou digestion la font aussi monter.</div>`;
+}
+
+function rendreActivite() {
+  const r = DATA[i];
+  if (![r.pas, r.cal, r.trimpJ, r.charge].some(isN)) return '<div class="muted">Pas de données d\'activité pour ce jour.</div>';
+  return `<div class="row" style="border-top:0;padding-top:0"><span>Pas</span><b>${fmt(r.pas)}</b></div>
+    <div class="row"><span>Calories actives</span><b>${fmt(r.cal)} kcal</b></div>
+    <div class="row"><span>Charge des séances</span><b>${fmt(r.charge)}</b></div>
+    <div class="row"><span>Charge du reste de la journée</span><b>${fmt(r.trimpJ)}</b></div>
+    <div class="muted" style="margin-top:8px">Le strain additionne les deux charges : séances enregistrées et FC continue hors séances (marche, escaliers…).</div>`;
+}
+
+function rendreCharge() {
+  const r = DATA[i];
+  const ratio = isN(r.ratio) && r.ratio > 0 ? r.ratio : (isN(r.strain7) && isN(r.tol) && r.tol > 0 ? r.strain7 / r.tol : null);
+  if (!isN(ratio)) return '<div class="muted">Pas encore assez de séances enregistrées.</div>';
+  const z = ratio < 0.8 ? ['Sous-charge', C.mut] : ratio <= 1.3 ? ['Zone optimale', C.vert]
+          : ratio <= 1.5 ? ['Charge élevée', C.jaune] : ['Risque de surmenage', C.rouge];
+  const seg = (a, b, c) => `<div class="band" style="left:${a/2*100}%;width:${(b-a)/2*100}%;background:${c};border-radius:0"></div>`;
+  return `<div class="reco" style="color:${z[1]}">${z[0]}<small>Ratio aigu/chronique ${fmt(ratio, 2)} : ta charge des 7 derniers jours rapportée à ta tolérance sur 28 jours.</small></div>
+    <div class="bar">${seg(0, .8, C.mut)}${seg(.8, 1.3, C.vert)}${seg(1.3, 1.5, C.jaune)}${seg(1.5, 2, C.rouge)}
+      <div class="mark" style="left:${clamp(ratio, 0, 2) / 2 * 100}%"></div></div>
+    ${echelle([[0, '0'], [40, '0,8'], [65, '1,3'], [75, '1,5'], [100, '2+']])}
+    <div class="row" style="margin-top:6px"><span>Charge 7 j (Polar)</span><b>${fmt(r.strain7)}</b></div>
+    <div class="row"><span>Tolérance 28 j (Polar)</span><b>${fmt(r.tol)}</b></div>`;
+}
+
+function rendreJournal() {
+  const lignes = [];
+  [['alcool', 'Alcool la veille'], ['repas', 'Repas tardif la veille']].forEach(([k, label]) => {
+    const avec = [], sans = [];
+    for (let j = 0; j < DATA.length - 1; j++) {
+      const lendemain = DATA[j + 1];
+      if (!isN(lendemain.rec) || dnum(lendemain.d) - dnum(DATA[j].d) !== 1) continue;
+      (DATA[j][k] === 1 ? avec : sans).push(lendemain.rec);
+    }
+    if (avec.length >= 3 && sans.length >= 3) {
+      const dl = avg(avec) - avg(sans);
+      lignes.push(`<div class="row"><span>${label}<br><span class="muted">${avec.length} jours avec · ${sans.length} sans</span></span>
+        <b class="${dl < 0 ? 'down' : 'up'}">${dl >= 0 ? '+' : '−'}${fmt(Math.abs(dl))} pts</b></div>`);
+    }
+  });
+  return lignes.length
+    ? lignes.join('') + '<div class="muted" style="margin-top:8px">Écart de récupération moyenne le lendemain. Corrélation, pas causalité.</div>'
+    : '<div class="muted">Coche Alcool ou Repas tardif dans le Sheet : leur impact sur ta récupération du lendemain apparaîtra ici dès 3 occurrences.</div>';
+}
+
+function rendreEntete() {
+  const r = DATA[i], dt = new Date(r.d + 'T12:00:00'), auj = new Date();
+  const ecart = Math.round(Date.UTC(auj.getFullYear(), auj.getMonth(), auj.getDate()) / 864e5 - dnum(r.d));
+  $('dayName').textContent = dt.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('dayRel').textContent = ecart === 0 ? "Aujourd'hui" : ecart === 1 ? 'Hier' : `Il y a ${ecart} jours`;
+  $('prev').disabled = i <= 0;
+  $('next').disabled = i >= DATA.length - 1;
+}
+
+let vue = 'jour';
+
+function ouvrir(v) {
+  vue = v;
+  $('tabJour').classList.toggle('on', v === 'jour');
+  $('tabSommeil').classList.toggle('on', v === 'sommeil');
+  $('tabLongevite').classList.toggle('on', v === 'longevite');
+  $('vueJour').hidden = v !== 'jour';
+  $('vueSommeil').hidden = v !== 'sommeil';
+  $('vueLongevite').hidden = v !== 'longevite';
+  // La longévité porte sur les 28 derniers jours : la navigation par jour n'a pas de sens ici
+  ['prev', 'next'].forEach(k => { $(k).style.visibility = v === 'longevite' ? 'hidden' : ''; });
+  window.scrollTo(0, 0);
+  rendre();
+}
+
+function rendre() {
+  if (!DATA.length) {
+    $('app').innerHTML = '<div class="empty">Aucune donnée pour l\'instant.<br>Lance « majQuotidienne » dans le script.</div>';
+    return;
+  }
+  rendreEntete();
+  if (vue === 'sommeil') { rendreSommeil(DATA[i].d); return; }
+  if (vue === 'longevite') { rendreLongevite(); return; }
+  $('rings').innerHTML = rendreAnneaux();
+  $('resumeSommeil').innerHTML = rendreResumeSommeil();
+  $('reco').innerHTML = rendreReco();
+  $('stress').innerHTML = rendreStress();
+  $('activite').innerHTML = rendreActivite();
+  $('metrics').innerHTML = rendreMetriques();
+  $('trend').innerHTML = rendreTendance();
+  $('acwr').innerHTML = rendreCharge();
+  $('journal').innerHTML = rendreJournal();
+  const derniere = DATA[dernierJour()];
+  $('foot').textContent = 'Données Polar · dernière nuit mesurée : ' +
+    new Date(derniere.d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+}
+
+/* ======================= Onglet Sommeil ======================= */
+
+const PH = { eveil: '#e7ebf0', paradoxal: '#a08bff', leger: '#5aa9ff', profond: '#2f5bd3', inconnu: '#3a414c' };
+// Hypnogramme Polar : 0 éveil, 1 paradoxal, 2-3 léger, 4 profond, 5 non reconnu
+const STADE = { 0: ['eveil', 0], 1: ['paradoxal', 1], 2: ['leger', 2], 3: ['leger', 2], 4: ['profond', 3], 5: ['inconnu', null] };
+const LIB_RECHARGE = ['', 'Très faible', 'Faible', 'Compromise', 'Correcte', 'Bonne', 'Très bonne'];
+const COUL_RECHARGE = ['', C.rouge, C.rouge, C.jaune, C.mut, C.vert, C.vert];
+const LIB_5 = ['', 'Bien en dessous de l\'habitude', 'En dessous de l\'habitude', 'Habituelle', 'Au-dessus de l\'habitude', 'Bien au-dessus de l\'habitude'];
+const LIB_CONT = ['', 'Très fragmenté', 'Fragmenté', 'Assez continu', 'Continu', 'Très continu'];
+const LIB_RESSENTI = ['', 'Très mal', 'Mal', 'Moyennement', 'Bien', 'Très bien'];
+const cacheSommeil = {};
+
+const hm = m => {
+  if (!isN(m)) return '–';
+  const t = Math.round(m), h = Math.floor(t / 60), mn = t % 60;
+  return h ? `${h} h ${String(mn).padStart(2, '0')}` : `${mn} min`;
+};
+const heure = iso => String(iso || '').slice(11, 16);
+const pct = (x, tot) => isN(x) && tot > 0 ? Math.round(100 * x / tot) : null;
+
+function rendreSommeil(d) {
+  const el = $('vueSommeil');
+  if (cacheSommeil[d]) { el.innerHTML = vueSommeil(cacheSommeil[d]); return; }
+  el.innerHTML = '<div class="card chargement">Chargement de la nuit…</div>';
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run
+      .withSuccessHandler(det => { cacheSommeil[d] = det; if (vue === 'sommeil' && DATA[i].d === d) el.innerHTML = vueSommeil(det); })
+      .withFailureHandler(err => { el.innerHTML = `<div class="card muted">Erreur : ${err.message}</div>`; })
+      .detailSommeil(CLE, d);
+  } else if (window.DEMO_SOMMEIL) {
+    cacheSommeil[d] = window.DEMO_SOMMEIL(d);
+    el.innerHTML = vueSommeil(cacheSommeil[d]);
+  }
+}
+
+function vueSommeil(n) {
+  const veille = new Date(n.d + 'T12:00:00'); veille.setDate(veille.getDate() - 1);
+  const jour = new Date(n.d + 'T12:00:00');
+  const titre = `Nuit du ${veille.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })} au ${jour.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })}`;
+  const coach = carteCoach(n.coach);
+  if (n.vide) {
+    return coach + `<div class="card"><div class="reco">${titre}<small>Pas de nuit enregistrée pour cette date. Porte la montre la nuit et synchronise-la avec Polar Flow.</small></div></div>` + carteHistorique(n);
+  }
+  const reel = (n.leger || 0) + (n.profond || 0) + (n.paradoxal || 0);
+  const nbReveils = n.hypno.reduce((c, p, k) => c + (p[1] === 0 && (k === 0 || n.hypno[k - 1][1] !== 0) ? 1 : 0), 0);
+  const scoreCoul = n.score >= 75 ? C.vert : n.score >= 55 ? C.jaune : C.rouge;
+
+  return coach + `
+  <div class="card hero">
+    ${anneau(isN(n.score) ? n.score / 100 : 0, C.sommeil, fmt(n.score), 'Score')}
+    <div>
+      <h3>${titre}</h3>
+      <div class="muted" style="font-size:14px">${heure(n.debut)} → ${heure(n.fin)}</div>
+      ${isN(n.ressenti) && n.ressenti > 0 ? `<div class="muted" style="margin-top:6px">Ton ressenti : <b style="color:${C.txt}">${LIB_RESSENTI[n.ressenti] || n.ressenti}</b></div>` : ''}
+    </div>
+  </div>
+
+  <div class="tiles">
+    ${tuile('Temps de sommeil', hm(n.duree), isN(n.objectif) ? `objectif ${hm(n.objectif)}` : '')}
+    ${tuile('Sommeil réel', hm(reel), isN(pct(reel, n.duree)) ? `${pct(reel, n.duree)} % du temps au lit` : '')}
+    ${tuile('Interruptions', hm(n.interruptions), `${nbReveils} réveil${nbReveils > 1 ? 's' : ''}`)}
+    ${tuile('Cycles de sommeil', fmt(n.cycles), 'cycles complets')}
+  </div>
+
+  <div class="card"><h2>Phases de sommeil</h2>
+    <div class="chart">${hypnogramme(n)}</div>
+    ${phases(n, reel)}
+  </div>
+
+  <div class="card themes"><h2>Score de sommeil</h2>
+    <div class="big"><b>${fmt(n.score)}</b><small>/ 100</small><span style="color:${scoreCoul}">${n.score >= 75 ? 'Bon' : n.score >= 55 ? 'Correct' : 'Faible'}</span></div>
+    ${theme('Quantité', n.sQuantite, 'temps de sommeil')}
+    ${theme('Solidité', n.sSolidite, 'interruptions, continuité, sommeil réel')}
+    ${theme('Régénération', n.sRegeneration, 'sommeil paradoxal et profond')}
+  </div>
+
+  <div class="card"><h2>Continuité</h2>
+    <div class="big"><b>${fmt(n.continuite, 1)}</b><small>/ 5</small><span>${LIB_CONT[n.classe] || ''}</span></div>
+    <div class="jauge"><i style="width:${clamp((n.continuite || 0) / 5 * 100, 0, 100)}%;background:${C.sommeil}"></i></div>
+    <div class="row" style="margin-top:12px"><span>Interruptions longues</span><b>${hm(n.longues)}</b></div>
+    <div class="row"><span>Interruptions courtes</span><b>${hm(n.courtes)}</b></div>
+  </div>
+
+  <div class="card"><h2>Fréquence cardiaque pendant le sommeil</h2>
+    ${courbe(n.fc, n.duree, C.rouge, 'bpm', 0)}
+  </div>
+
+  <div class="card"><h2>Nightly Recharge</h2>
+    <div class="big"><b style="color:${COUL_RECHARGE[n.recharge] || C.txt}">${LIB_RECHARGE[n.recharge] || '–'}</b></div>
+    <div class="row" style="margin-top:12px"><span>Charge SNA<br><span class="sous">${LIB_5[n.ansStatut] || ''}</span></span><b>${isN(n.ans) ? (n.ans > 0 ? '+' : '') + fmt(n.ans, 1) : '–'} <small class="sous">/ ±10</small></b></div>
+    <div class="row"><span>Sleep Charge<br><span class="sous">${LIB_5[n.sleepCharge] || ''}</span></span><b>${isN(n.sleepCharge) ? n.sleepCharge + ' / 5' : '–'}</b></div>
+    <div class="row"><span>Variabilité cardiaque (HRV)</span><b>${fmt(n.hrv)} ms</b></div>
+    ${courbe(n.hrvS, n.duree, C.vert, 'ms', 0)}
+    <div class="row"><span>Respiration</span><b>${fmt(n.resp, 1)} /min</b></div>
+    ${courbe(n.respS, n.duree, C.strain, '/min', 1)}
+    <div class="row"><span>FC moyenne</span><b>${fmt(n.fcMoy)} bpm</b></div>
+    <div class="row"><span>Intervalle entre battements</span><b>${fmt(n.rr)} ms</b></div>
+  </div>
+
+  ${carteHistorique(n)}`;
+}
+
+/* ======================= Coach de sommeil ======================= */
+
+const JOURS_COURTS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const JOURS_LONGS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+const SOURCE_BASE = { nuits: n => `médiane de tes ${n} nuits suivies d'une bonne récupération`,
+  objectif: () => 'ton objectif de sommeil Polar', defaut: () => 'valeur par défaut' };
+
+/** Minutes depuis midi : permet de comparer des heures du soir et d'après minuit. */
+const depuisMidi = m => (m - 720 + 1440) % 1440;
+
+function carteCoach(c) {
+  if (!c) return '';
+  const parts = [['base', 'Base', c.base, C.sommeil], ['strain', 'Strain', c.strain, C.strain],
+                 ['dette', 'Dette', c.dette, C.jaune], ['ajust', 'Récupération', c.ajust, C.rouge]];
+  const barre = parts.map(([, , v, col]) => v > 0 ? `<i style="width:${v / c.besoin * 100}%;background:${col}"></i>` : '').join('');
+  const detail = parts.map(([, nom, v, col], k) => `<span><span><i class="pastille" style="background:${col}"></i>${nom}</span><b>${k ? '+' : ''}${hm(v)}</b></span>`).join('');
+
+  // Heures déjà passées : seulement si le soir affiché est aujourd'hui
+  const auj = new Date(), d0 = new Date(c.d + 'T12:00:00');
+  const ceSoir = auj.getFullYear() === d0.getFullYear() && auj.getMonth() === d0.getMonth() && auj.getDate() === d0.getDate();
+  const maint = depuisMidi(auj.getHours() * 60 + auj.getMinutes());
+  const passe = k => ceSoir && maint > depuisMidi(c.plan[k].minutes);
+  const cles = [['optimal', 'Optimal'], ['solide', 'Solide'], ['minimum', 'Minimum']];
+  const prochaine = cles.map(x => x[0]).find(k => !passe(k));
+  const couchers = cles.map(([k, nom]) => `<div class="${passe(k) ? 'passe' : k === prochaine ? 'cle' : ''}"><small>${nom}</small>
+    <b>${c.plan[k].heure}</b><span>${hm(c.plan[k].sommeil)} de sommeil</span></div>`).join('');
+
+  const perf = isN(c.perf)
+    ? `<div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:12px"><span>Nuit passée<br><span class="sous">${hm(c.reelNuit)} sur ${hm(c.besoinVeille)} visées</span></span><b>${c.perf} %</b></div>
+       <div class="jauge"><i style="width:${clamp(c.perf, 0, 100)}%;background:${c.perf >= 85 ? C.vert : c.perf >= 70 ? C.jaune : C.rouge}"></i></div></div>`
+    : `<div class="row"><span>Nuit passée</span><span class="muted">pas de mesure</span></div>`;
+  const regul = isN(c.regularite)
+    ? `<div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:12px"><span>Régularité<br><span class="sous">écart moyen : coucher ${c.ecartCoucher} min · réveil ${c.ecartReveil} min</span></span><b>${c.regularite} <small class="sous">/ 100</small></b></div>
+       <div class="jauge"><i style="width:${clamp(c.regularite, 0, 100)}%;background:${c.regularite >= 75 ? C.vert : c.regularite >= 60 ? C.jaune : C.rouge}"></i></div></div>`
+    : `<div class="row"><span>Régularité</span><span class="muted">au moins 2 nuits récentes nécessaires</span></div>`;
+
+  const champs = c.reveils.map((h, k) => `<label>${JOURS_COURTS[k]}<input type="text" inputmode="numeric" maxlength="5" pattern="([01]\\d|2[0-3]):[0-5]\\d" data-j="${k}" value="${h}" aria-label="Réveil ${JOURS_LONGS[k]}" required></label>`).join('');
+
+  return `<div class="card coach"><h2>Coach · ce soir</h2>
+    <div class="besoin"><b>${hm(c.besoin)}</b><span class="muted">de sommeil à prévoir${c.besoin >= 600 ? ' (plafonné à 10 h)' : ''}</span></div>
+    <div class="stack" style="margin-top:12px">${barre}</div>
+    <div class="parts">${detail}</div>
+    <div class="couchers">${couchers}</div>
+    <div class="muted">Heure d'extinction des feux pour un réveil à <b style="color:${C.txt}">${c.reveil}</b> (${JOURS_LONGS[c.jourReveil]}), avec ${Math.round(c.eff * 100)} % d'efficacité et 15 min pour t'endormir.</div>
+    <div class="conseil">${c.conseil}</div>
+    ${perf}
+    ${regul}
+    <details class="reveils row" style="display:block">
+      <summary><span>Heures de réveil</span><em>Modifier</em></summary>
+      <form id="formReveil"><div class="semaine">${champs}</div>
+        <div class="actions"><button type="submit">Enregistrer</button><span class="muted" id="etatReveil"></span></div></form>
+    </details>
+    <div class="muted" style="margin-top:10px;font-size:11px">Base : ${(SOURCE_BASE[c.source] || SOURCE_BASE.defaut)(c.nbBonnes)}. Polar ne détecte pas les siestes : elles ne réduisent pas la dette affichée. Coefficients conventionnels, réglables dans le script.</div>
+  </div>`;
+}
+
+/* Enregistrement des heures de réveil (délégation : la carte est recréée à chaque rendu). */
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'formReveil') return;
+  e.preventDefault();
+  const vals = [...e.target.querySelectorAll('input[data-j]')].map(x => x.value);
+  const etat = $('etatReveil'), bouton = e.target.querySelector('button');
+  if (!vals.every(v => /^([01]\d|2[0-3]):[0-5]\d$/.test(v))) { etat.textContent = 'Format HH:MM attendu.'; return; }
+  const fini = res => {
+    if (res && res.data && res.data.length) DATA = res.data;
+    Object.keys(cacheSommeil).forEach(k => delete cacheSommeil[k]);
+    rendre();
+  };
+  bouton.disabled = true; etat.textContent = 'Enregistrement…';
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run.withSuccessHandler(fini)
+      .withFailureHandler(err => { bouton.disabled = false; etat.textContent = 'Erreur : ' + err.message; })
+      .enregistrerReveil(CLE, vals);
+  } else if (window.DEMO_REVEIL) {
+    fini(window.DEMO_REVEIL(vals));
+  }
+});
+
+/* ======================= Onglet Longévité ======================= */
+
+let cacheLongevite = null;
+const NOMS_LG = { vo2: 'VO2max', fc: 'FC de repos', pas: 'Pas', mvpa: 'Activité modérée à vigoureuse',
+  renfo: 'Renforcement musculaire', sommeil: 'Durée de sommeil', sri: 'Régularité du sommeil' };
+const ans = v => `${v < 0 ? '−' : v > 0 ? '+' : ''}${fmt(Math.abs(v), 1)} an${Math.abs(v) >= 2 ? 's' : ''}`;
+
+function rendreLongevite() {
+  const el = $('vueLongevite');
+  if (cacheLongevite) { el.innerHTML = vueLongevite(cacheLongevite); return; }
+  el.innerHTML = '<div class="card chargement">Calcul en cours…</div>';
+  const ok = r => { cacheLongevite = r; if (vue === 'longevite') el.innerHTML = vueLongevite(r); };
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run.withSuccessHandler(ok)
+      .withFailureHandler(err => { el.innerHTML = `<div class="card muted">Erreur : ${err.message}</div>`; })
+      .detailLongevite(CLE);
+  } else if (window.DEMO_LONGEVITE) ok(window.DEMO_LONGEVITE());
+}
+
+/** Valeur mesurée et référence, en clair. */
+function valeurLg(k, r) {
+  const x = r.x, M = r.methode;
+  switch (k) {
+    case 'vo2': return isN(x.vo2) ? `${fmt(x.vo2, 1)} mL/kg/min · réf. ${fmt(r.vo2.ref, 1)}` : '';
+    case 'fc': return isN(x.fc) ? `${fmt(x.fc)} bpm éveillé au repos · réf. ${M.FC.REF}` : '';
+    case 'pas': return isN(x.pas) ? `${fmt(x.pas)} pas/jour · réf. ${fmt(M.PAS.REF)}` : '';
+    case 'mvpa': return isN(x.mvpa) ? `${fmt(x.mvpa, 1)} MET-h/semaine · réf. ${fmt(M.MVPA.REF, 1)}` : '';
+    case 'renfo': return isN(x.renfo) ? `${fmt(x.renfo)} min/semaine · réf. ${M.RENFO.REF}` : '';
+    case 'sommeil': return isN(x.sommeil) ? `${hm(x.sommeil * 60)} mesurées ≈ ${fmt(M.SOMMEIL.DECLARE_A + M.SOMMEIL.DECLARE_B * (x.sommeil - M.SOMMEIL.DECLARE_PIVOT), 1)} h déclarées · réf. ${M.SOMMEIL.OPTIMUM_H} h` : '';
+    case 'sri': return isN(x.sri) ? `SRI ${fmt(x.sri, 1)} / 100 · réf. ${M.SRI.REF}` : '';
+  }
+  return '';
+}
+
+function absentLg(k, r) {
+  if (k === 'vo2') {
+    if (!isN(r.vo2.brut) || !r.vo2.date) return 'pas de test de forme daté';
+    const dt = new Date(r.vo2.date + 'T12:00:00'), j = dt.getDate();
+    return `test du ${j === 1 ? '1er' : j} ${dt.toLocaleDateString('fr-FR', { month: 'long' })}, trop ancien (> ${r.methode.VO2_VALIDITE_J} j)`;
+  }
+  if (k === 'sri') return `il faut ${r.methode.SRI.MIN_PAIRES} paires de jours consécutifs avec la nuit avant et après (${r.qualite.paires} pour l'instant)`;
+  if (k === 'pas' || k === 'mvpa') return 'aucun jour porté en entier';
+  return 'pas de données';
+}
+
+function vueLongevite(r) {
+  const M = r.methode, q = r.qualite;
+  let h = '';
+  if (!r.profil.naissance || !r.profil.sexe) {
+    h += `<div class="card"><div class="reco">Profil incomplet<small>La date de naissance ou le sexe n'est pas disponible dans ton profil Polar. Lance « majQuotidienne » après l'avoir renseigné sur Polar Flow.</small></div></div>`;
+  } else if (!q.ok) {
+    const barre = (n, max, col) => `<div class="jauge"><i style="width:${clamp(n / max * 100, 0, 100)}%;background:${col}"></i></div>`;
+    h += `<div class="card"><h2>Âge physiologique</h2>
+      <div class="reco">En calibration<small>${q.nuits}/${M.MIN_NUITS} nuits, ${q.jours}/${M.MIN_JOURS} jours portés en entier, sur les ${M.QUALITE_J} derniers jours.</small></div>
+      <div class="progres"><div class="row"><span>Nuits enregistrées</span><b>${q.nuits} / ${M.MIN_NUITS}</b></div>${barre(q.nuits, M.MIN_NUITS, C.sommeil)}
+      <div class="row" style="margin-top:8px"><span>Jours portés en entier</span><b>${q.jours} / ${M.MIN_JOURS}</b></div>${barre(q.jours, M.MIN_JOURS, C.strain)}</div>
+      <div class="muted">Un jour compte s'il y a de la FC continue sur au moins ${Math.round(M.COUVERTURE_MIN * 100)} % de la journée : garde la montre jour et nuit.</div></div>`;
+  } else {
+    h += carteAgeLg(r);
+  }
+  h += carteContribLg(r, q.ok);
+  if (q.ok && r.leviers.length) h += carteLeviersLg(r);
+  return h + carteMethodeLg(r);
+}
+
+function carteAgeLg(r) {
+  const age = r.ageCivil + r.lisse, bas = r.ageCivil + r.bas, haut = r.ageCivil + r.haut;
+  const lo = Math.floor(Math.min(bas, r.ageCivil) - 1), hi = Math.ceil(Math.max(haut, r.ageCivil) + 1), X = v => (v - lo) / (hi - lo) * 100;
+  const col = r.lisse <= -0.5 ? C.vert : r.lisse >= 0.5 ? C.rouge : C.jaune;
+  const badge = Math.abs(r.lisse) < 0.05 ? 'comme ton âge civil' : `${fmt(Math.abs(r.lisse), 1)} an${Math.abs(r.lisse) >= 2 ? 's' : ''} de ${r.lisse < 0 ? 'moins' : 'plus'}`;
+  const ry = r.rythme;
+  const ryTxt = !isN(ry) ? `Disponible après ${r.methode.RYTHME_MIN_POINTS} jours de calcul.`
+    : ry < 0.9 ? 'Ton âge physiologique avance moins vite que le calendrier.' : ry > 1.1 ? 'Ton âge physiologique avance plus vite que le calendrier.' : 'Ton âge physiologique avance au rythme du calendrier.';
+  return `<div class="card lg-hero"><h2>Âge physiologique</h2>
+    <div class="ages"><b>${fmt(age, 1)}</b><span class="muted">ans</span><span class="badge" style="background:${col}22;color:${col}">${badge}</span></div>
+    <div class="muted" style="margin-top:6px">Âge civil : ${fmt(r.ageCivil, 1)} ans</div>
+    <div class="intervalle" role="img" aria-label="Intervalle de 80 % entre ${fmt(bas, 1)} et ${fmt(haut, 1)} ans">
+      <div class="axe"></div>
+      <div class="plage" style="left:${X(bas)}%;width:${X(haut) - X(bas)}%;background:${col}"></div>
+      <div class="civil" style="left:${X(r.ageCivil)}%"></div>
+      <div class="moi" style="left:${X(age)}%;background:${col}"></div>
+    </div>
+    ${echelle([[0, lo + ' ans'], [clamp(X(r.ageCivil), 12, 88), 'civil'], [100, hi + ' ans']])}
+    <div class="muted" style="margin-top:6px">8 chances sur 10 d'être entre <b style="color:${C.txt}">${fmt(bas, 1)}</b> et <b style="color:${C.txt}">${fmt(haut, 1)} ans</b>.</div>
+    <div class="row rythme" style="margin-top:12px"><span>Rythme de vieillissement<br><span class="sous">${ryTxt}</span></span><b>${isN(ry) ? fmt(ry, 2) : '–'}</b></div>
+    ${courbeLg(r)}
+  </div>`;
+}
+
+/** Évolution de l'âge physiologique lissé (écart à l'âge civil). */
+function courbeLg(r) {
+  const s = r.historique || [];
+  if (s.length < 3) return '';
+  const W = 340, H = 60, vs = s.map(p => p[1]), mn = Math.min(0, ...vs), mx = Math.max(0, ...vs), rg = (mx - mn) || 1;
+  const t0 = dnum(s[0][0]), t1 = dnum(s[s.length - 1][0]) || t0 + 1;
+  const X = d => ((dnum(d) - t0) / Math.max(1, t1 - t0) * W).toFixed(1), Y = v => (H - 4 - (v - mn) / rg * (H - 8)).toFixed(1);
+  const d = s.map((p, k) => (k ? 'L' : 'M') + X(p[0]) + ' ' + Y(p[1])).join('');
+  return `<div class="chart" style="margin-top:10px"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Évolution de l'écart d'âge">
+    <line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="${C.mut}" stroke-dasharray="3 4"/>
+    <path d="${d}" fill="none" stroke="${C.sommeil}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
+    <div class="legend" style="justify-content:space-between"><span>${new Date(s[0][0] + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span><span>pointillés : âge civil</span><span>aujourd'hui</span></div>`;
+}
+
+function carteContribLg(r, calibre) {
+  const c = r.contributions, cles = Object.keys(NOMS_LG);
+  const presents = cles.filter(k => isN(c[k])).sort((a, b) => Math.abs(c[b]) - Math.abs(c[a]));
+  const absents = cles.filter(k => !isN(c[k]));
+  const echelleMax = Math.max(1, ...presents.map(k => Math.abs(c[k])));
+  const ligne = k => {
+    const v = c[k], w = Math.abs(v) / echelleMax * 50, col = v < 0 ? C.vert : C.rouge;
+    return `<div class="contrib"><div class="nom">${NOMS_LG[k]}<span>${valeurLg(k, r)}</span></div>
+      <div><div class="barre"><i style="${v < 0 ? `right:50%` : `left:50%`};width:${w}%;background:${col}"></i></div>
+      <div class="val" style="text-align:${v < 0 ? 'left' : 'right'};color:${Math.abs(v) < 0.05 ? C.mut : col}">${ans(v)}</div></div></div>`;
+  };
+  return `<div class="card"><h2>${calibre ? 'Ce qui pèse sur ton âge' : 'Mesures en cours'}</h2>
+    ${calibre ? '<div class="axe-txt"><span></span><span style="flex:1;display:flex;justify-content:space-between;max-width:50%;margin-left:auto"><span>← plus jeune</span><span>plus vieux →</span></span></div>' : ''}
+    ${calibre ? presents.map(ligne).join('') : presents.map(k => `<div class="row"><span>${NOMS_LG[k]}</span><span class="muted" style="text-align:right">${valeurLg(k, r)}</span></div>`).join('')}
+    ${absents.map(k => `<div class="row"><span>${NOMS_LG[k]}</span><span class="muted" style="text-align:right">${absentLg(k, r)}</span></div>`).join('')}
+    ${!isN(r.x.vo2) ? '<div class="conseil">Fais un test de forme sur ta montre (Fitness Test, allongé, 5 min) : la VO2max est souvent l\'indicateur qui pèse le plus dans ce modèle.</div>' : ''}
+    ${calibre ? '<div class="muted" style="margin-top:8px">Valeurs centrales du modèle. Leur somme peut différer un peu de l\'âge affiché, qui est lissé sur plusieurs semaines et issu de la simulation.</div>' : ''}
+  </div>`;
+}
+
+function carteLeviersLg(r) {
+  return `<div class="card"><h2>Leviers</h2>
+    ${r.leviers.map((l, k) => `<div class="levier${k >= 3 ? ' second' : ''}"><span>${l.texte}</span><b>${ans(l.ans)}</b></div>`).join('')}
+    <div class="muted" style="margin-top:8px">Gain calculé par le modèle, toutes choses égales par ailleurs, une fois l'effet installé sur 28 jours.</div></div>`;
+}
+
+function carteMethodeLg(r) {
+  const M = r.methode, b = Math.LN2 / M.DOUBLEMENT_ANS;
+  const pts = P => P.map(p => `${fmt(p[0], p[0] % 1 ? 2 : 0)} → ${fmt(p[1], 2)}`).join(' ; ');
+  const sports = Object.keys(r.sports || {});
+  return `<div class="card"><details class="methode"><summary><span>Méthode</span><span>›</span></summary>
+    <h3>Principe</h3>
+    <p>La mortalité adulte croît de façon quasi exponentielle avec l'âge (loi de Gompertz) : h(âge) = a·e<sup>b·âge</sup>, et elle double environ tous les ${M.DOUBLEMENT_ANS} ans, d'où b = ln 2 / ${M.DOUBLEMENT_ANS} = ${fmt(b, 4)} par an.
+    Si tes habitudes multiplient ton risque par HR par rapport à une personne typique de ton âge et de ton sexe, ton risque est celui d'une personne typique plus âgée de <code>Δ = ln(HR) / b</code>. Exemple : HR 0,90 → Δ = ${fmt(Math.log(0.9) / b, 2)} an.</p>
+    <h3>Indicateurs</h3>
+    <table>
+      <tr><td>VO2max</td><td>ln HR = ln(${fmt(M.VO2.RR_PAR_MET[0], 2)}) × (VO2 − réf.) / ${fmt(M.VO2.ML_PAR_MET, 1)}, écart borné à ±${M.VO2.ECART_MAX_MET} MET. Réf. : médiane FRIEND pour ton âge et ton sexe. Test Polar valable ${M.VO2_VALIDITE_J} jours.<br><i>Kodama et al., JAMA, 2009 ; Kaminsky et al., Mayo Clin Proc, 2015.</i></td></tr>
+      <tr><td>FC de repos</td><td>ln HR = ln(${fmt(M.FC.RR_PAR_10[0], 2)}) × (FC − ${M.FC.REF}) / 10, FC éveillé au repos (médiane 28 j).<br><i>Zhang et al., CMAJ, 2016.</i></td></tr>
+      <tr><td>Pas</td><td>${pts(M.PAS.POINTS)} ; plateau à ${fmt(M.PAS.PLATEAU_MOINS_60)} avant 60 ans. Jours portés en entier seulement.<br><i>Paluch et al., Lancet Public Health, 2022.</i></td></tr>
+      <tr><td>Activité</td><td>MET-h/semaine : ${pts(M.MVPA.POINTS)}. FC de réserve ≥ ${M.MVPA.FCR_MODEREE * 100} % = ${M.MVPA.MET_MODERE} MET, ≥ ${M.MVPA.FCR_VIGOUREUSE * 100} % = ${M.MVPA.MET_VIGOUREUX} MET, plus les séances.<br><i>Arem et al., JAMA Intern Med, 2015.</i></td></tr>
+      <tr><td>Renforcement</td><td>min/semaine : ${pts(M.RENFO.POINTS)}, plateau ensuite.<br><i>Momma et al., Br J Sports Med, 2022.</i></td></tr>
+      <tr><td>Sommeil</td><td>Durée déclarée = ${fmt(M.SOMMEIL.DECLARE_A, 1)} + ${fmt(M.SOMMEIL.DECLARE_B, 3)} × (mesurée − ${fmt(M.SOMMEIL.DECLARE_PIVOT, 1)}). Minimum de risque à ${M.SOMMEIL.OPTIMUM_H} h ; RR ${fmt(M.SOMMEIL.RR_COURT[0], 2)} par heure en moins, ${fmt(M.SOMMEIL.RR_LONG[0], 2)} par heure en plus.<br><i>Yin et al., J Am Heart Assoc, 2017 ; Lauderdale et al., Epidemiology, 2008.</i></td></tr>
+      <tr><td>Régularité</td><td>SRI = 200 × P(même état à 24 h d'écart) − 100, minute par minute, d'après l'hypnogramme. ${pts(M.SRI.POINTS)}, plateau au-delà.<br><i>Windred et al., Sleep, 2024.</i></td></tr>
+    </table>
+    <h3>Recouvrement</h3>
+    <p>Ces indicateurs mesurent en partie la même chose et aucune étude ne les combine tous. Domaine Activité = moyenne de pas et activité, plus le renforcement. Si la VO2max est connue, facteur ${M.RECOUVREMENT_AVEC_VO2} sur l'Activité et sur la FC de repos (convention). Sommeil = durée + régularité. Écart borné à ±${M.DELTA_MAX} ans.</p>
+    <h3>Incertitude</h3>
+    <p>${fmt(M.MC_TIRAGES)} tirages (graine fixe) : chaque coefficient publié selon son intervalle de confiance, temps de doublement entre ${M.DOUBLEMENT_MIN} et ${M.DOUBLEMENT_MAX} ans, recouvrement entre ${M.RECOUVREMENT_MIN} et ${M.RECOUVREMENT_MAX}, VO2max ± ${fmt(M.VO2_ERREUR_SD, 1)} mL/kg/min, SRI décalé de ${M.SRI_DECALAGE_MIN} à ${M.SRI_DECALAGE_MAX}. On affiche la médiane et l'intervalle de 80 % (P10–P90).</p>
+    <h3>Lissage et rythme</h3>
+    <p>Âge affiché = moyenne mobile exponentielle des écarts quotidiens (demi-vie ${M.DEMI_VIE_J} jours). Rythme = 1 + pente de cet écart sur ${M.RYTHME_J} jours, en années par année de calendrier, borné entre ${M.RYTHME_MIN} et ${M.RYTHME_MAX}. Une ligne par semaine est publiée le lundi dans la feuille « Longévité ».</p>
+    <h3>Conventions (réglables dans le script)</h3>
+    <ul>
+      <li>FC de référence ${M.FC.REF} bpm : les cohortes mesurent la FC assise au cabinet, pas au poignet.</li>
+      <li>Références : ${fmt(M.PAS.REF)} pas (entre les quartiles 2 et 3), ${fmt(M.MVPA.REF, 1)} MET-h (minimum OMS), ${M.SRI.REF} de SRI (médiane UK Biobank).</li>
+      <li>Activité ≥ 75 MET-h placée à 112,5 ; séance sans FC comptée à ${M.MVPA.MET_SEANCE_SANS_FC} MET.</li>
+      <li>Jour porté en entier : FC sur ≥ ${Math.round(M.COUVERTURE_MIN * 100)} % des tranches de 5 min. Seuils : ${M.MIN_NUITS} nuits et ${M.MIN_JOURS} jours sur ${M.QUALITE_J}.</li>
+      <li>Incertitude du SRI : écart-type ${M.SRI.SD_LN_CONVENTION} sur ln HR, faute d'intervalles vérifiés.</li>
+      <li>Renforcement : codes sport contenant ${M.RENFO.SPORTS.split('|').join(', ')}.${sports.length ? ` Codes vus : ${sports.map(k => k + (r.sports[k] ? ' ✓' : '')).join(', ')}.` : ''}</li>
+    </ul>
+    <h3>Hors périmètre</h3>
+    <ul><li>Masse maigre : la montre ne la mesure pas.</li><li>HRV : absente des modèles de référence et sans courbe dose-réponse fiable chez le jeune adulte.</li><li>Siestes : non détectées par Polar.</li></ul>
+    <h3>Limites</h3>
+    <ul>
+      <li>Les rapports de risque viennent surtout de cohortes de 40 à 70 ans. À ton âge, la mortalité absolue est très faible : cet « âge » traduit un risque relatif, pas une espérance de vie.</li>
+      <li>Corrélations observationnelles, pas des effets prouvés individuellement.</li>
+      <li>Mesures au poignet ≠ mesures des études (accéléromètres, questionnaires, tests sur tapis).</li>
+      <li>Ce n'est pas un avis médical.</li>
+    </ul>
+  </details></div>`;
+}
+
+function tuile(k, v, sous) {
+  return `<div class="met"><div class="k">${k}</div><div class="v">${v}</div><div class="d sous">${sous || '&nbsp;'}</div></div>`;
+}
+
+function theme(nom, v, detail) {
+  const col = v >= 75 ? C.vert : v >= 50 ? C.jaune : C.rouge;
+  return `<div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:12px"><span>${nom}<br><span class="sous">${detail}</span></span><b style="white-space:nowrap">${fmt(v)} <small>/ 100</small></b></div>
+    <div class="jauge"><i style="width:${clamp(v || 0, 0, 100)}%;background:${col}"></i></div></div>`;
+}
+
+/* Hypnogramme : 4 couloirs (éveil, paradoxal, léger, profond), une barre par phase. */
+function hypnogramme(n) {
+  if (!n.hypno.length) return '<div class="muted">Hypnogramme indisponible.</div>';
+  const G = 66, W = 340, lane = 24, gap = 6, H = 4 * lane + 3 * gap, total = Math.max(n.duree, 1), sx = (W - G) / total;
+  const noms = ['Éveil', 'Paradoxal', 'Léger', 'Profond'];
+  let s = `<svg viewBox="0 0 ${W} ${H + 20}" role="img" aria-label="Hypnogramme de la nuit">`;
+  noms.forEach((nm, k) => {
+    const y = k * (lane + gap);
+    s += `<rect x="${G}" y="${y}" width="${W - G}" height="${lane}" rx="3" fill="${C.line}" opacity=".35"/>`;
+    s += `<text x="0" y="${y + lane / 2 + 4}" fill="${C.mut}" font-size="11">${nm}</text>`;
+  });
+  n.hypno.forEach((p, k) => {
+    const st = STADE[p[1]];
+    if (!st || st[1] === null) return;
+    const t0 = clamp(p[0], 0, total), t1 = clamp(k + 1 < n.hypno.length ? n.hypno[k + 1][0] : total, 0, total);
+    if (t1 <= t0) return;
+    const y = st[1] * (lane + gap);
+    s += `<rect x="${(G + t0 * sx).toFixed(1)}" y="${y}" width="${Math.max(1, (t1 - t0) * sx).toFixed(1)}" height="${lane}" fill="${PH[st[0]]}"/>`;
+  });
+  // Axe : endormissement, heures pleines, réveil
+  const h0 = minutesDe(n.debut);
+  s += `<text x="${G}" y="${H + 15}" fill="${C.mut}" font-size="10">${heure(n.debut)}</text>`;
+  s += `<text x="${W}" y="${H + 15}" text-anchor="end" fill="${C.mut}" font-size="10">${heure(n.fin)}</text>`;
+  for (let t = 60 - (h0 % 60); t < total - 45; t += 60) {
+    if (t < 35) continue;
+    const hh = Math.round((h0 + t) / 60) % 24;
+    if (total > 420 && hh % 2) continue;
+    s += `<line x1="${(G + t * sx).toFixed(1)}" x2="${(G + t * sx).toFixed(1)}" y1="0" y2="${H}" stroke="#161a20" stroke-width="1.5"/>`;
+    s += `<text x="${(G + t * sx).toFixed(1)}" y="${H + 15}" text-anchor="middle" fill="${C.mut}" font-size="10">${hh} h</text>`;
+  }
+  return s + '</svg>';
+}
+
+function minutesDe(iso) { const p = String(iso).slice(11, 16).split(':').map(Number); return p[0] * 60 + p[1]; }
+
+function phases(n, reel) {
+  const L = [
+    ['leger', 'Léger', n.leger, '50–60 %'],
+    ['profond', 'Profond', n.profond, '13–23 %'],
+    ['paradoxal', 'Paradoxal', n.paradoxal, '20–25 %'],
+  ];
+  const tot = reel + (n.interruptions || 0);
+  const barre = L.concat([['eveil', 'Éveil', n.interruptions]])
+    .map(([k, , v]) => `<i style="width:${tot > 0 ? (v || 0) / tot * 100 : 0}%;background:${PH[k]}"></i>`).join('');
+  const lignes = L.map(([k, nom, v, rep]) => `<div class="row"><span><i class="pastille" style="background:${PH[k]}"></i>${nom}<br><span class="sous" style="margin-left:17px">repère adulte ${rep}</span></span>
+      <b>${hm(v)} <small class="sous">· ${isN(pct(v, reel)) ? pct(v, reel) + ' %' : '–'}</small></b></div>`).join('');
+  return `<div class="stack" style="margin-top:14px">${barre}</div>${lignes}
+    <div class="row"><span><i class="pastille" style="background:${PH.eveil}"></i>Éveil</span><b>${hm(n.interruptions)}</b></div>
+    <div class="muted" style="margin-top:6px">Pourcentages calculés sur le sommeil réel (léger + profond + paradoxal).</div>`;
+}
+
+/* Courbe sur la durée de la nuit, avec moyenne en pointillés et min / max. */
+function courbe(serie, duree, couleur, unite, dec) {
+  if (!serie || serie.length < 2) return '<div class="muted" style="padding:6px 0">Pas de mesures.</div>';
+  const W = 340, H = 70, total = Math.max(duree, serie[serie.length - 1][0], 1);
+  const vs = serie.map(p => p[1]), mn = Math.min(...vs), mx = Math.max(...vs), rg = (mx - mn) || 1, moy = avg(vs);
+  const X = t => (clamp(t, 0, total) / total * W).toFixed(1), Y = v => (H - 6 - (v - mn) / rg * (H - 14)).toFixed(1);
+  const d = serie.map((p, k) => (k ? 'L' : 'M') + X(p[0]) + ' ' + Y(p[1])).join('');
+  return `<div class="chart" style="margin:8px 0 4px"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Courbe ${unite}">
+    <line x1="0" x2="${W}" y1="${Y(moy)}" y2="${Y(moy)}" stroke="${C.mut}" stroke-dasharray="3 4" stroke-width="1"/>
+    <path d="${d}" fill="none" stroke="${couleur}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+  </svg></div>
+  <div class="legend" style="justify-content:space-between;margin-bottom:6px"><span>min ${fmt(mn, dec)}</span><span>moy. ${fmt(moy, dec)} ${unite}</span><span>max ${fmt(mx, dec)}</span></div>`;
+}
+
+/* 7 dernières nuits : barres empilées par phase. */
+function carteHistorique(n) {
+  const parDate = {};
+  (n.historique || []).forEach(x => { if (isN(x.leger) || isN(x.profond)) parDate[x.d] = x; });
+  if (Object.keys(parDate).length < 2) return '';
+  // 7 jours calendaires se terminant sur la nuit affichée : une case vide = nuit non enregistrée
+  const h = Array.from({ length: 7 }, (_, k) => {
+    const dt = new Date(n.d + 'T12:00:00'); dt.setDate(dt.getDate() - 6 + k);
+    const d = dt.toISOString().slice(0, 10);
+    return parDate[d] || { d: d, vide: true };
+  });
+  const W = 340, H = 120, bw = W / 7, tot = x => (x.profond || 0) + (x.leger || 0) + (x.paradoxal || 0) + (x.eveil || 0);
+  const max = Math.max(...h.filter(x => !x.vide).map(tot)), ech = Math.ceil(max / 60) * 60 || 60;
+  let s = `<svg viewBox="0 0 ${W} ${H + 30}" role="img" aria-label="Phases des 7 dernières nuits">`;
+  for (let g = 120; g < ech; g += 120) {
+    const y = H - g / ech * H;
+    s += `<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="${C.line}" stroke-dasharray="3 4"/><text x="${W}" y="${y - 3}" text-anchor="end" fill="${C.mut}" font-size="9">${g / 60} h</text>`;
+  }
+  h.forEach((x, k) => {
+    let y = H;
+    const cx = k * bw + bw * .2, w = bw * .6;
+    [['profond', x.profond], ['leger', x.leger], ['paradoxal', x.paradoxal], ['eveil', x.eveil]].forEach(([ph, v]) => {
+      if (!isN(v) || v <= 0) return;
+      const hh = v / ech * H;
+      y -= hh;
+      s += `<rect x="${cx.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${hh.toFixed(1)}" fill="${PH[ph]}"/>`;
+    });
+    const dt = new Date(x.d + 'T12:00:00'), courant = x.d === n.d;
+    s += `<text x="${(cx + w / 2).toFixed(1)}" y="${H + 14}" text-anchor="middle" fill="${courant ? C.txt : C.mut}" font-size="10" font-weight="${courant ? 700 : 400}">${dt.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</text>`;
+    if (x.vide) s += `<rect x="${cx.toFixed(1)}" y="${H - 3}" width="${w.toFixed(1)}" height="3" rx="1.5" fill="${C.line}"/>`;
+    s += `<text x="${(cx + w / 2).toFixed(1)}" y="${H + 26}" text-anchor="middle" fill="${C.mut}" font-size="9">${x.vide ? '–' : hm(tot(x) - (x.eveil || 0)).replace(' ', '')}</text>`;
+  });
+  s += '</svg>';
+  const leg = [['profond', 'Profond'], ['leger', 'Léger'], ['paradoxal', 'Paradoxal'], ['eveil', 'Éveil']]
+    .map(([k, l]) => `<span><i style="background:${PH[k]}"></i>${l}</span>`).join('');
+  return `<div class="card"><h2>7 dernières nuits</h2><div class="chart">${s}</div><div class="legend">${leg}</div>
+    <div class="muted" style="margin-top:6px">Sous chaque barre : sommeil réel. Une case vide = nuit non enregistrée.</div></div>`;
+}
+
+function aller(pas) { const n = clamp(i + pas, 0, DATA.length - 1); if (n !== i) { i = n; rendre(); } }
+$('tabJour').onclick = () => ouvrir('jour');
+$('tabSommeil').onclick = () => ouvrir('sommeil');
+$('tabLongevite').onclick = () => ouvrir('longevite');
+$('resumeSommeil').onclick = () => ouvrir('sommeil');
+$('resumeSommeil').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ouvrir('sommeil'); } };
+$('rings').addEventListener('click', e => { const r = e.target.closest('[data-vue]'); if (r) ouvrir(r.dataset.vue); });
+$('prev').onclick = () => aller(-1);
+$('next').onclick = () => aller(1);
+let x0 = null;
+document.addEventListener('touchstart', e => { x0 = vue === 'longevite' ? null : e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (x0 === null) return;
+  const dx = e.changedTouches[0].clientX - x0;
+  if (Math.abs(dx) > 60) aller(dx > 0 ? -1 : 1);
+  x0 = null;
+}, { passive: true });
+
+const btn = $('refresh');
+if (typeof google === 'undefined' || !google.script || !google.script.run) {
+  btn.style.display = 'none';
+} else {
+  btn.onclick = () => {
+    btn.disabled = true; btn.textContent = 'Mise à jour…';
+    google.script.run
+      .withSuccessHandler(d => { DATA = d; i = dernierJour(); Object.keys(cacheSommeil).forEach(k => delete cacheSommeil[k]); cacheLongevite = null; rendre(); btn.disabled = false; btn.textContent = '↻ Mettre à jour'; })
+      .withFailureHandler(err => { btn.disabled = false; btn.textContent = 'Erreur : ' + err.message; })
+      .rafraichirDashboard(CLE);
+  };
+}
+
+rendre();
+</script>
+</body>
+</html>

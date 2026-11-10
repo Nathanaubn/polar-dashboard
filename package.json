@@ -1,0 +1,15 @@
+{
+  "name": "polar-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Google Apps Script : données de montre Polar → indicateurs de récupération, strain, stress, sommeil et longévité dans un Google Sheet, avec un dashboard web privé.",
+  "scripts": {
+    "test": "node tests/coach.test.js && node tests/longevite.test.js && node tests/integration.test.js",
+    "apercu": "node outils/apercu.js",
+    "push": "clasp push",
+    "deploy": "echo \"Utilise : clasp deploy -i <ID_DU_DEPLOIEMENT> -d \\\"description\\\" (jamais de nouveau déploiement)\""
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
