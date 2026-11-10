@@ -1,5 +1,7 @@
 # Structure du Google Sheet
 
+🇬🇧 [English version](../SHEETS.md)
+
 Le script crée et remplit lui-même trois feuilles. Ne déplace pas les colonnes : le script les repère par leur position.
 Les colonnes du **journal manuel** (P, Q, R de « Données ») sont les seules à remplir à la main ; elles sont conservées à chaque mise à jour.
 Toutes les autres sont recalculées.

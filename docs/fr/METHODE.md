@@ -1,5 +1,7 @@
 # Méthode de calcul
 
+🇬🇧 [English version](../METHODOLOGY.md)
+
 Toutes les constantes sont dans l'objet `CFG` en tête de `src/Code.js`. Ce qui ne vient pas d'une étude publiée y est marqué
 comme **convention** : ce sont des choix raisonnables, réglables. Rien ici n'est un avis médical.
 
